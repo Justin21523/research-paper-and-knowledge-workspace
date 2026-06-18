@@ -1,0 +1,26 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Build output
+publish/
+artifacts/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
