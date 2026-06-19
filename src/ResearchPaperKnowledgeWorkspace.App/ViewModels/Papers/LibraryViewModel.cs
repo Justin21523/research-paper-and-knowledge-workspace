@@ -621,7 +621,11 @@ public sealed class LibraryViewModel : ViewModelBase
             cancellationToken);
         await LoadPapersAsync(cancellationToken);
     }
-
+    public Task ReloadAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return LoadPapersAsync(cancellationToken);
+    }
     private Task RefreshAsync()
     {
         return LoadPapersAsync();
