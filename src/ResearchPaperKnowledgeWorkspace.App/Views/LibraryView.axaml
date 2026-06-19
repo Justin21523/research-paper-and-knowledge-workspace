@@ -3,12 +3,13 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers"
+    xmlns:paperVm="using:ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers"
     xmlns:models="using:ResearchPaperKnowledgeWorkspace.Application.Papers.Models"
     x:DataType="vm:LibraryViewModel">
 
     <Grid
         Margin="20"
-        RowDefinitions="Auto,Auto,Auto,Auto,*">
+        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*">
 
         <!-- Header -->
         <Grid
@@ -511,6 +512,120 @@
                     Content="Seed 150 Demo Papers" />
             </Grid>
         </Border> 
+        <Border
+            Grid.Row="3"
+            Margin="0,0,0,12"
+            Padding="12"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            CornerRadius="8">
+
+            <Grid
+                ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,180,Auto,180,Auto,Auto"
+                ColumnSpacing="8">
+
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Text="{Binding BatchSelectionText}" />
+
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding SelectAllCurrentPageCommand}"
+                    Content="Select Page" />
+
+                <Button
+                    Grid.Column="2"
+                    Command="{Binding ClearBatchSelectionCommand}"
+                    Content="Clear Selection" />
+
+                <Button
+                    Grid.Column="3"
+                    Command="{Binding BatchFavoriteCommand}"
+                    Content="Favorite" />
+
+                <Button
+                    Grid.Column="4"
+                    Command="{Binding BatchArchiveCommand}"
+                    Content="Archive" />
+
+                <ComboBox
+                    Grid.Column="5"
+                    ItemsSource="{Binding Organization.Tags}"
+                    SelectedItem="{Binding SelectedBatchTag, Mode=TwoWay}"
+                    PlaceholderText="Choose tag">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate
+                            x:DataType="paperVm:TagSelectionItemViewModel">
+
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button
+                    Grid.Column="6"
+                    Command="{Binding BatchAssignTagCommand}"
+                    Content="Assign Tag" />
+
+                <ComboBox
+                    Grid.Column="7"
+                    ItemsSource="{Binding Organization.Projects}"
+                    SelectedItem="{Binding SelectedBatchProject, Mode=TwoWay}"
+                    PlaceholderText="Choose project">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate
+                            x:DataType="paperVm:ProjectSelectionItemViewModel">
+
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button
+                    Grid.Column="8"
+                    Command="{Binding BatchAssignProjectCommand}"
+                    Content="Assign Project" />
+
+                <Button
+                    Grid.Column="9"
+                    Command="{Binding RequestBatchDeleteCommand}"
+                    Content="Delete Selected" />
+            </Grid>
+        </Border>
+        <Border
+            Grid.Row="4"
+            Margin="0,0,0,12"
+            Padding="12"
+            IsVisible="{Binding IsBatchDeleteConfirmationVisible}"
+            BorderBrush="#C84A4A"
+            BorderThickness="1"
+            CornerRadius="6">
+
+            <Grid
+                ColumnDefinitions="*,Auto,Auto"
+                ColumnSpacing="8">
+
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Text="{Binding BatchDeleteConfirmationText}"
+                    TextWrapping="Wrap" />
+
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding CancelBatchDeleteCommand}"
+                    Content="Cancel" />
+
+                <Button
+                    Grid.Column="2"
+                    Command="{Binding ConfirmBatchDeleteCommand}"
+                    Content="Delete Permanently" />
+            </Grid>
+        </Border>
         <!-- Feedback messages -->
         <StackPanel
             Grid.Row="3"
@@ -544,7 +659,7 @@
 
         <!-- Library content -->
         <Grid
-            Grid.Row="4"
+            Grid.Row="5"
             ColumnDefinitions="3*,2*"
             ColumnSpacing="14">
 
@@ -597,7 +712,9 @@
             <!-- Paper list -->
             <Grid
                 IsVisible="{Binding HasPapers}"
-                RowDefinitions="Auto,*, Auto">
+                RowDefinitions="Auto,*,Auto">
+
+                <!-- Table header -->
                 <Border
                     Grid.Row="0"
                     Padding="12,10"
@@ -605,34 +722,49 @@
                     BorderThickness="1"
                     CornerRadius="6">
 
-                    <Grid ColumnDefinitions="2.5*,1.5*,90,1.5*,120">
+                    <Grid
+                        ColumnDefinitions="42,2.5*,1.5*,90,1.5*,120,42">
+
                         <TextBlock
                             Grid.Column="0"
+                            HorizontalAlignment="Center"
                             FontWeight="SemiBold"
-                            Text="Title" />
+                            Text="✓" />
 
                         <TextBlock
                             Grid.Column="1"
                             FontWeight="SemiBold"
-                            Text="Authors" />
+                            Text="Title" />
 
                         <TextBlock
                             Grid.Column="2"
                             FontWeight="SemiBold"
-                            Text="Year" />
+                            Text="Authors" />
 
                         <TextBlock
                             Grid.Column="3"
                             FontWeight="SemiBold"
-                            Text="Publication" />
+                            Text="Year" />
 
                         <TextBlock
                             Grid.Column="4"
                             FontWeight="SemiBold"
+                            Text="Publication" />
+
+                        <TextBlock
+                            Grid.Column="5"
+                            FontWeight="SemiBold"
                             Text="Status" />
+
+                        <TextBlock
+                            Grid.Column="6"
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="★" />
                     </Grid>
                 </Border>
 
+                <!-- Paper rows -->
                 <ListBox
                     Grid.Row="1"
                     Margin="0,8,0,0"
@@ -648,47 +780,84 @@
                     </ListBox.Styles>
 
                     <ListBox.ItemTemplate>
-                        <DataTemplate x:DataType="models:PaperListItem">
+                        <DataTemplate
+                            x:DataType="paperVm:PaperRowViewModel">
+
                             <Border
+                                HorizontalAlignment="Stretch"
                                 Padding="12"
                                 BorderBrush="Gray"
                                 BorderThickness="0,0,0,1">
 
-                                <Grid ColumnDefinitions="2.5*,1.5*,90,1.5*,120">
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Margin="0,0,12,0"
-                                        FontWeight="SemiBold"
-                                        Text="{Binding Title}"
-                                        TextTrimming="CharacterEllipsis" />
+                                <Grid
+                                    ColumnDefinitions="42,2.5*,1.5*,90,1.5*,120,42">
 
-                                    <TextBlock
+                                    <!-- Batch selection checkbox -->
+                                    <CheckBox
+                                        Grid.Column="0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        IsChecked="{Binding IsBatchSelected, Mode=TwoWay}" />
+
+                                    <!-- Title -->
+                                    <StackPanel
                                         Grid.Column="1"
+                                        Margin="0,0,12,0">
+
+                                        <TextBlock
+                                            FontWeight="SemiBold"
+                                            Text="{Binding Title}"
+                                            TextTrimming="CharacterEllipsis" />
+
+                                        <TextBlock
+                                            IsVisible="{Binding IsArchived}"
+                                            FontSize="11"
+                                            Opacity="0.65"
+                                            Text="Archived" />
+                                    </StackPanel>
+
+                                    <!-- Authors -->
+                                    <TextBlock
+                                        Grid.Column="2"
                                         Margin="0,0,12,0"
                                         Text="{Binding AuthorsText}"
                                         TextTrimming="CharacterEllipsis" />
 
+                                    <!-- Year -->
                                     <TextBlock
-                                        Grid.Column="2"
+                                        Grid.Column="3"
                                         Margin="0,0,12,0"
                                         Text="{Binding PublicationYear}" />
 
+                                    <!-- Journal / conference -->
                                     <TextBlock
-                                        Grid.Column="3"
+                                        Grid.Column="4"
                                         Margin="0,0,12,0"
                                         Text="{Binding JournalTitle}"
                                         TextTrimming="CharacterEllipsis" />
 
+                                    <!-- Reading status -->
                                     <TextBlock
-                                        Grid.Column="4"
+                                        Grid.Column="5"
+                                        Margin="0,0,12,0"
                                         Text="{Binding ReadingStatus}" />
+
+                                    <!-- Favorite marker -->
+                                    <TextBlock
+                                        Grid.Column="6"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="18"
+                                        Text="{Binding FavoriteMarker}" />
                                 </Grid>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+
+                <!-- Pagination -->
                 <Grid
-                    Grid.Row="2"
+                    Grid.Row="6"
                     Margin="0,12,0,0"
                     ColumnDefinitions="Auto,*,Auto,Auto,Auto"
                     ColumnSpacing="8">
@@ -718,7 +887,7 @@
                         Grid.Column="4"
                         Command="{Binding SearchCommand}"
                         Content="Apply Page Size" />
-                </Grid>            
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

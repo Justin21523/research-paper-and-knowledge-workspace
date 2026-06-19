@@ -10,6 +10,8 @@ using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Development;
 using ResearchPaperKnowledgeWorkspace.Application.Common.Exceptions;
 using ResearchPaperKnowledgeWorkspace.Application.Papers.Models;
 using ResearchPaperKnowledgeWorkspace.Application.Papers.Services;
+using ResearchPaperKnowledgeWorkspace.Application.Organization.Models;
+using ResearchPaperKnowledgeWorkspace.Application.Organization.Services;
 
 namespace ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers;
 
@@ -17,6 +19,19 @@ public sealed class LibraryViewModel : ViewModelBase
 {
     private readonly PaperLibraryService _paperLibraryService;
     private readonly IDemoDataSeeder _demoDataSeeder;
+    private readonly PaperOrganizationService
+        _organizationService;
+
+    private readonly HashSet<Guid>
+        _batchSelectedPaperIds = [];
+
+    private bool _isBatchDeleteConfirmationVisible;
+
+    private TagSelectionItemViewModel?
+        _selectedBatchTag;
+
+    private ProjectSelectionItemViewModel?
+        _selectedBatchProject;
 
     private bool _isInitialized;
     private CancellationTokenSource?
@@ -47,21 +62,82 @@ public sealed class LibraryViewModel : ViewModelBase
     private bool _isUpdatingPaper;
     private bool _isSeeding;
     private bool _isDeleteConfirmationVisible;
+    
+    private PaperRowViewModel? _selectedPaper;
 
-    private PaperListItem? _selectedPaper;
     private PaperDetails? _selectedPaperDetails;
     private bool _isLoadingDetails;
 
     public LibraryViewModel(
         PaperLibraryService paperLibraryService,
         PaperEditorViewModel editor,
+        PaperOrganizationViewModel organization,
+        PaperOrganizationService organizationService,
         IDemoDataSeeder demoDataSeeder)
     {
         _paperLibraryService = paperLibraryService;
         _demoDataSeeder = demoDataSeeder;
+        _organizationService = organizationService;
 
+        Organization = organization;
+
+        Organization.Saved += OnOrganizationSaved;
+        Organization.CatalogChanged += OnOrganizationCatalogChanged;
         Editor = editor;
         Editor.Saved += OnEditorSaved;
+
+        SelectAllCurrentPageCommand =
+            new RelayCommand(
+                SelectAllCurrentPage,
+                CanSelectCurrentPage);
+
+        ClearBatchSelectionCommand =
+            new RelayCommand(
+                ClearBatchSelection,
+                CanClearBatchSelection);
+
+        BatchFavoriteCommand =
+            new AsyncRelayCommand(
+                BatchFavoriteAsync,
+                CanRunBatchCommand);
+
+        BatchUnfavoriteCommand =
+            new AsyncRelayCommand(
+                BatchUnfavoriteAsync,
+                CanRunBatchCommand);
+
+        BatchArchiveCommand =
+            new AsyncRelayCommand(
+                BatchArchiveAsync,
+                CanRunBatchCommand);
+
+        BatchRestoreCommand =
+            new AsyncRelayCommand(
+                BatchRestoreAsync,
+                CanRunBatchCommand);
+
+        BatchAssignTagCommand =
+            new AsyncRelayCommand(
+                BatchAssignTagAsync,
+                CanAssignBatchTag);
+
+        BatchAssignProjectCommand =
+            new AsyncRelayCommand(
+                BatchAssignProjectAsync,
+                CanAssignBatchProject);
+
+        RequestBatchDeleteCommand =
+            new RelayCommand(
+                RequestBatchDelete,
+                CanRunBatchCommand);
+
+        CancelBatchDeleteCommand =
+            new RelayCommand(CancelBatchDelete);
+
+        ConfirmBatchDeleteCommand =
+            new AsyncRelayCommand(
+                ConfirmBatchDeleteAsync,
+                CanConfirmBatchDelete);
 
         RefreshCommand = new AsyncRelayCommand(
             RefreshAsync,
@@ -111,9 +187,89 @@ public sealed class LibraryViewModel : ViewModelBase
             CanRunGeneralCommand);
     }
 
-    public ObservableCollection<PaperListItem> Papers { get; } =
-        new();
+    public IRelayCommand SelectAllCurrentPageCommand { get; }
 
+    public IRelayCommand ClearBatchSelectionCommand { get; }
+
+    public IAsyncRelayCommand BatchFavoriteCommand { get; }
+
+    public IAsyncRelayCommand BatchUnfavoriteCommand { get; }
+
+    public IAsyncRelayCommand BatchArchiveCommand { get; }
+
+    public IAsyncRelayCommand BatchRestoreCommand { get; }
+
+    public IAsyncRelayCommand BatchAssignTagCommand { get; }
+
+    public IAsyncRelayCommand BatchAssignProjectCommand { get; }
+
+    public IRelayCommand RequestBatchDeleteCommand { get; }
+
+    public IRelayCommand CancelBatchDeleteCommand { get; }
+
+    public IAsyncRelayCommand ConfirmBatchDeleteCommand { get; }
+    public ObservableCollection<PaperRowViewModel> Papers { get; } =
+        [];
+    
+    public PaperOrganizationViewModel Organization { get; }
+
+    public bool HasBatchSelection =>
+        _batchSelectedPaperIds.Count > 0;
+
+    public int BatchSelectionCount =>
+        _batchSelectedPaperIds.Count;
+
+    public string BatchSelectionText =>
+        BatchSelectionCount == 1
+            ? "1 paper selected"
+            : $"{BatchSelectionCount} papers selected";
+
+    public string BatchDeleteConfirmationText =>
+        $"Delete {BatchSelectionCount} selected papers permanently?";
+
+    public bool IsBatchDeleteConfirmationVisible
+    {
+        get => _isBatchDeleteConfirmationVisible;
+
+        private set
+        {
+            if (SetProperty(
+                    ref _isBatchDeleteConfirmationVisible,
+                    value))
+            {
+                NotifyCommandStates();
+            }
+        }
+    }
+
+    public TagSelectionItemViewModel? SelectedBatchTag
+    {
+        get => _selectedBatchTag;
+
+        set
+        {
+            if (SetProperty(ref _selectedBatchTag, value))
+            {
+                NotifyCommandStates();
+            }
+        }
+    }
+
+    public ProjectSelectionItemViewModel?
+        SelectedBatchProject
+    {
+        get => _selectedBatchProject;
+
+        set
+        {
+            if (SetProperty(
+                    ref _selectedBatchProject,
+                    value))
+            {
+                NotifyCommandStates();
+            }
+        }
+    }
     public PaperEditorViewModel Editor { get; }
 
     public IAsyncRelayCommand RefreshCommand { get; }
@@ -401,9 +557,25 @@ public sealed class LibraryViewModel : ViewModelBase
         }
     }
 
-    public PaperListItem? SelectedPaper
+    public PaperDetails? SelectedPaperDetails
+    {
+        get => _selectedPaperDetails;
+        private set
+        {
+            if (SetProperty(
+                    ref _selectedPaperDetails,
+                    value))
+            {
+                OnPropertyChanged(
+                    nameof(HasSelectedPaperDetails));
+            }
+        }
+    }
+    
+    public PaperRowViewModel? SelectedPaper
     {
         get => _selectedPaper;
+
         set
         {
             if (!SetProperty(ref _selectedPaper, value))
@@ -419,21 +591,6 @@ public sealed class LibraryViewModel : ViewModelBase
 
             HandleSelectedPaperChanged(value);
             NotifyCommandStates();
-        }
-    }
-
-    public PaperDetails? SelectedPaperDetails
-    {
-        get => _selectedPaperDetails;
-        private set
-        {
-            if (SetProperty(
-                    ref _selectedPaperDetails,
-                    value))
-            {
-                OnPropertyChanged(
-                    nameof(HasSelectedPaperDetails));
-            }
         }
     }
 
@@ -460,6 +617,8 @@ public sealed class LibraryViewModel : ViewModelBase
 
         _isInitialized = true;
 
+        await Organization.InitializeAsync(
+            cancellationToken);
         await LoadPapersAsync(cancellationToken);
     }
 
@@ -734,9 +893,24 @@ public sealed class LibraryViewModel : ViewModelBase
 
             Papers.Clear();
 
+            foreach (var row in Papers)
+            {
+                row.BatchSelectionChanged -=
+                    OnBatchSelectionChanged;
+            }
+
+            Papers.Clear();
+
             foreach (var paper in result.Items)
             {
-                Papers.Add(paper);
+                var row = new PaperRowViewModel(
+                    paper,
+                    _batchSelectedPaperIds.Contains(paper.Id));
+
+                row.BatchSelectionChanged +=
+                    OnBatchSelectionChanged;
+
+                Papers.Add(row);
             }
 
             CurrentPage = result.PageNumber;
@@ -777,7 +951,7 @@ public sealed class LibraryViewModel : ViewModelBase
     }
 
     private void HandleSelectedPaperChanged(
-        PaperListItem? value)
+        PaperRowViewModel? value)
     {
         _detailsCancellationTokenSource?.Cancel();
         _detailsCancellationTokenSource?.Dispose();
@@ -786,6 +960,7 @@ public sealed class LibraryViewModel : ViewModelBase
         IsDeleteConfirmationVisible = false;
         SelectedPaperDetails = null;
         Editor.Clear();
+        Organization.ClearPaper();
 
         if (value is null)
         {
@@ -820,6 +995,9 @@ public sealed class LibraryViewModel : ViewModelBase
             {
                 SelectedPaperDetails = details;
                 Editor.Load(details);
+                await Organization.LoadPaperAsync(
+                    paperId,
+                    cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -962,5 +1140,275 @@ public sealed class LibraryViewModel : ViewModelBase
         RequestDeleteCommand.NotifyCanExecuteChanged();
         ConfirmDeleteCommand.NotifyCanExecuteChanged();
         SeedDemoDataCommand.NotifyCanExecuteChanged();
+        SelectAllCurrentPageCommand.NotifyCanExecuteChanged();
+        ClearBatchSelectionCommand.NotifyCanExecuteChanged();
+        BatchFavoriteCommand.NotifyCanExecuteChanged();
+        BatchUnfavoriteCommand.NotifyCanExecuteChanged();
+        BatchArchiveCommand.NotifyCanExecuteChanged();
+        BatchRestoreCommand.NotifyCanExecuteChanged();
+        BatchAssignTagCommand.NotifyCanExecuteChanged();
+        BatchAssignProjectCommand.NotifyCanExecuteChanged();
+        RequestBatchDeleteCommand.NotifyCanExecuteChanged();
+        ConfirmBatchDeleteCommand.NotifyCanExecuteChanged();
     }
+
+    private void OnBatchSelectionChanged(
+        Guid paperId,
+        bool isSelected)
+    {
+        if (isSelected)
+        {
+            _batchSelectedPaperIds.Add(paperId);
+        }
+        else
+        {
+            _batchSelectedPaperIds.Remove(paperId);
+        }
+
+        NotifyBatchSelectionChanged();
+    }
+
+    private void SelectAllCurrentPage()
+    {
+        foreach (var paper in Papers)
+        {
+            paper.IsBatchSelected = true;
+        }
+    }
+
+    private void ClearBatchSelection()
+    {
+        _batchSelectedPaperIds.Clear();
+
+        foreach (var paper in Papers)
+        {
+            paper.IsBatchSelected = false;
+        }
+
+        IsBatchDeleteConfirmationVisible = false;
+
+        NotifyBatchSelectionChanged();
+    }
+
+    private async Task BatchFavoriteAsync()
+    {
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .SetBatchFavoriteAsync(ids, true),
+            "Selected papers were added to favorites.");
+    }
+
+    private async Task BatchUnfavoriteAsync()
+    {
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .SetBatchFavoriteAsync(ids, false),
+            "Selected papers were removed from favorites.");
+    }
+
+    private async Task BatchArchiveAsync()
+    {
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .SetBatchArchivedAsync(ids, true),
+            "Selected papers were archived.");
+    }
+
+    private async Task BatchRestoreAsync()
+    {
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .SetBatchArchivedAsync(ids, false),
+            "Selected papers were restored.");
+    }
+
+    private async Task BatchAssignTagAsync()
+    {
+        var tag = SelectedBatchTag;
+
+        if (tag is null)
+        {
+            return;
+        }
+
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .AssignTagToBatchAsync(
+                    new BatchAssignTagRequest(
+                        ids,
+                        tag.Id)),
+            $"Tag “{tag.Name}” assigned.");
+    }
+
+    private async Task BatchAssignProjectAsync()
+    {
+        var project = SelectedBatchProject;
+
+        if (project is null)
+        {
+            return;
+        }
+
+        await ExecuteBatchOperationAsync(
+            ids => _organizationService
+                .AssignProjectToBatchAsync(
+                    new BatchAssignProjectRequest(
+                        ids,
+                        project.Id)),
+            $"Project “{project.Name}” assigned.");
+    }
+
+    private void RequestBatchDelete()
+    {
+        IsBatchDeleteConfirmationVisible = true;
+    }
+
+    private void CancelBatchDelete()
+    {
+        IsBatchDeleteConfirmationVisible = false;
+    }
+
+    private async Task ConfirmBatchDeleteAsync()
+    {
+        var ids = _batchSelectedPaperIds.ToArray();
+
+        if (ids.Length == 0)
+        {
+            return;
+        }
+
+        IsUpdatingPaper = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var result =
+                await _organizationService.DeleteBatchAsync(
+                    ids);
+
+            foreach (var id in ids)
+            {
+                _batchSelectedPaperIds.Remove(id);
+            }
+
+            IsBatchDeleteConfirmationVisible = false;
+            SelectedPaper = null;
+
+            await LoadPapersAsync();
+
+            StatusMessage =
+                $"{result.AffectedCount} papers deleted permanently.";
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage =
+                $"Unable to delete selected papers: {exception.Message}";
+        }
+        finally
+        {
+            IsUpdatingPaper = false;
+            NotifyBatchSelectionChanged();
+        }
+    }
+
+    private async Task ExecuteBatchOperationAsync(
+        Func<IReadOnlyCollection<Guid>,
+            Task<BatchPaperOperationResult>> operation,
+        string successMessage)
+    {
+        var ids = _batchSelectedPaperIds.ToArray();
+
+        if (ids.Length == 0)
+        {
+            return;
+        }
+
+        IsUpdatingPaper = true;
+        ErrorMessage = null;
+        StatusMessage = null;
+
+        try
+        {
+            var result = await operation(ids);
+
+            await LoadPapersAsync();
+
+            StatusMessage =
+                $"{successMessage} " +
+                $"{result.AffectedCount} records changed.";
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage =
+                $"Batch operation failed: {exception.Message}";
+        }
+        finally
+        {
+            IsUpdatingPaper = false;
+        }
+    }
+
+    private bool CanSelectCurrentPage()
+    {
+        return !IsBusy &&
+            Papers.Count > 0;
+    }
+
+    private bool CanClearBatchSelection()
+    {
+        return !IsBusy &&
+            HasBatchSelection;
+    }
+
+    private bool CanRunBatchCommand()
+    {
+        return !IsBusy &&
+            HasBatchSelection;
+    }
+
+    private bool CanAssignBatchTag()
+    {
+        return CanRunBatchCommand() &&
+            SelectedBatchTag is not null;
+    }
+
+    private bool CanAssignBatchProject()
+    {
+        return CanRunBatchCommand() &&
+            SelectedBatchProject is not null;
+    }
+
+    private bool CanConfirmBatchDelete()
+    {
+        return CanRunBatchCommand() &&
+            IsBatchDeleteConfirmationVisible;
+    }
+
+    private void NotifyBatchSelectionChanged()
+    {
+        OnPropertyChanged(nameof(HasBatchSelection));
+        OnPropertyChanged(nameof(BatchSelectionCount));
+        OnPropertyChanged(nameof(BatchSelectionText));
+        OnPropertyChanged(
+            nameof(BatchDeleteConfirmationText));
+
+        NotifyCommandStates();
+    }
+
+    private async void OnOrganizationSaved(
+        object? sender,
+        Guid paperId)
+    {
+        await ReloadAndSelectAsync(paperId);
+    }
+
+    private void OnOrganizationCatalogChanged(
+        object? sender,
+        EventArgs e)
+    {
+        SelectedBatchTag = null;
+        SelectedBatchProject = null;
+    }
+
+
 }
