@@ -1,3 +1,7 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Persistence;
 using ResearchPaperKnowledgeWorkspace.Application.Common.Exceptions;
 using ResearchPaperKnowledgeWorkspace.Application.Papers.Models;
@@ -114,4 +118,50 @@ public sealed class PaperLibraryService
                 $"Publication year must be between 1000 and {maximumYear}.");
         }
     }
+    public async Task<PaperDetails> GetPaperDetailsAsync(
+        Guid paperId,
+        CancellationToken cancellationToken = default)
+    {
+        if (paperId == Guid.Empty)
+        {
+            throw new RequestValidationException(
+                "A valid paper identifier is required.");
+        }
+
+        var paper = await _paperRepository.GetByIdAsync(
+            paperId,
+            cancellationToken);
+
+        if (paper is null)
+        {
+            throw new EntityNotFoundException(
+                "The selected paper could not be found.");
+        }
+
+        return new PaperDetails(
+            paper.Id,
+            paper.Title,
+            paper.Subtitle,
+            BuildAuthorsText(paper),
+            paper.AbstractText,
+            paper.PublicationYear,
+            paper.JournalTitle,
+            paper.ConferenceName,
+            paper.Publisher,
+            paper.Volume,
+            paper.Issue,
+            paper.PageRange,
+            paper.Doi,
+            paper.Isbn,
+            paper.Issn,
+            paper.Url,
+            paper.LanguageCode,
+            paper.CitationKey,
+            paper.ReadingStatus,
+            paper.Rating,
+            paper.Priority,
+            paper.IsFavorite,
+            paper.UpdatedAtUtc);
+    }
+
 }

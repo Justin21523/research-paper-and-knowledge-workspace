@@ -12,6 +12,7 @@ using ResearchPaperKnowledgeWorkspace.Infrastructure.Data.Initialization;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.DependencyInjection;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Storage;
 using ResearchPaperKnowledgeWorkspace.Application.DependencyInjection;
+using ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers;
 
 namespace ResearchPaperKnowledgeWorkspace.App;
 
@@ -38,8 +39,9 @@ public partial class App : Avalonia.Application
             services.AddResearchWorkspaceInfrastructure(
                 workspacePaths);
 
+            services.AddSingleton<LibraryViewModel>();
             services.AddSingleton<MainWindowViewModel>();
-
+            
             _serviceProvider = services.BuildServiceProvider(
                 new ServiceProviderOptions
                 {

@@ -1,6 +1,22 @@
-﻿namespace ResearchPaperKnowledgeWorkspace.App.ViewModels;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers;
 
-public partial class MainWindowViewModel : ViewModelBase
+namespace ResearchPaperKnowledgeWorkspace.App.ViewModels;
+
+public sealed class MainWindowViewModel : ViewModelBase
 {
-    public string Greeting { get; } = "Welcome to Avalonia!";
+    public MainWindowViewModel(
+        LibraryViewModel library)
+    {
+        Library = library;
+    }
+
+    public LibraryViewModel Library { get; }
+
+    public Task InitializeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Library.InitializeAsync(cancellationToken);
+    }
 }

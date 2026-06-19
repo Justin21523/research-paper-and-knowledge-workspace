@@ -1,0 +1,266 @@
+<UserControl
+    x:Class="ResearchPaperKnowledgeWorkspace.App.Views.LibraryView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:ResearchPaperKnowledgeWorkspace.App.ViewModels.Papers"
+    xmlns:models="using:ResearchPaperKnowledgeWorkspace.Application.Papers.Models"
+    x:DataType="vm:LibraryViewModel">
+
+    <Grid
+        Margin="24"
+        RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Header -->
+        <Grid
+            Grid.Row="0"
+            Margin="0,0,0,18"
+            ColumnDefinitions="*,Auto">
+
+            <StackPanel>
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    Text="Research Library" />
+
+                <TextBlock
+                    Margin="0,4,0,0"
+                    Opacity="0.7"
+                    Text="{Binding PaperCountText}" />
+            </StackPanel>
+
+            <Button
+                Grid.Column="1"
+                MinWidth="100"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Command="{Binding RefreshCommand}"
+                Content="Refresh" />
+        </Grid>
+
+        <!-- Quick add form -->
+        <Border
+            Grid.Row="1"
+            Margin="0,0,0,14"
+            Padding="16"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            CornerRadius="8">
+
+            <StackPanel Spacing="12">
+                <TextBlock
+                    FontSize="17"
+                    FontWeight="SemiBold"
+                    Text="Quick Add Paper" />
+
+                <Grid ColumnDefinitions="2*,110,1.4*,1.4*,Auto">
+                    <TextBox
+                        Grid.Column="0"
+                        Margin="0,0,8,0"
+                        Text="{Binding TitleInput}"
+                        PlaceholderText="Paper title" />
+
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,8,0"
+                        Text="{Binding PublicationYearInput}"
+                        PlaceholderText="Year" />
+
+                    <TextBox
+                        Grid.Column="2"
+                        Margin="0,0,8,0"
+                        Text="{Binding JournalTitleInput}"
+                        PlaceholderText="Journal or conference" />
+
+                    <TextBox
+                        Grid.Column="3"
+                        Margin="0,0,8,0"
+                        Text="{Binding DoiInput}"
+                        PlaceholderText="DOI" />
+
+                    <Button
+                        Grid.Column="4"
+                        MinWidth="110"
+                        Command="{Binding CreatePaperCommand}"
+                        Content="Add Paper" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Feedback messages -->
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,0,0,14"
+            Spacing="8">
+
+            <Border
+                IsVisible="{Binding HasError}"
+                Padding="12"
+                BorderBrush="#C84A4A"
+                BorderThickness="1"
+                CornerRadius="6">
+
+                <TextBlock
+                    Text="{Binding ErrorMessage}"
+                    TextWrapping="Wrap" />
+            </Border>
+
+            <Border
+                IsVisible="{Binding HasStatusMessage}"
+                Padding="12"
+                BorderBrush="#4B8A57"
+                BorderThickness="1"
+                CornerRadius="6">
+
+                <TextBlock
+                    Text="{Binding StatusMessage}"
+                    TextWrapping="Wrap" />
+            </Border>
+        </StackPanel>
+
+        <!-- Library content -->
+        <Grid Grid.Row="3">
+
+            <!-- Loading state -->
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsVisible="{Binding IsLoading}"
+                Spacing="12">
+
+                <ProgressBar
+                    Width="260"
+                    IsIndeterminate="True" />
+
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    Text="Loading research papers..." />
+            </StackPanel>
+
+            <!-- Empty state -->
+            <Border
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                IsVisible="{Binding IsEmpty}"
+                Padding="32"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="10">
+
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Text="Your research library is empty" />
+
+                    <TextBlock
+                        MaxWidth="520"
+                        HorizontalAlignment="Center"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Text="Add your first paper using the quick add form above. PDF import, metadata extraction, and batch import will be added in later phases." />
+                </StackPanel>
+            </Border>
+
+            <!-- Paper list -->
+            <Grid
+                IsVisible="{Binding HasPapers}"
+                RowDefinitions="Auto,*">
+
+                <Border
+                    Grid.Row="0"
+                    Padding="12,10"
+                    BorderBrush="Gray"
+                    BorderThickness="1"
+                    CornerRadius="6">
+
+                    <Grid ColumnDefinitions="2.5*,1.5*,90,1.5*,120">
+                        <TextBlock
+                            Grid.Column="0"
+                            FontWeight="SemiBold"
+                            Text="Title" />
+
+                        <TextBlock
+                            Grid.Column="1"
+                            FontWeight="SemiBold"
+                            Text="Authors" />
+
+                        <TextBlock
+                            Grid.Column="2"
+                            FontWeight="SemiBold"
+                            Text="Year" />
+
+                        <TextBlock
+                            Grid.Column="3"
+                            FontWeight="SemiBold"
+                            Text="Publication" />
+
+                        <TextBlock
+                            Grid.Column="4"
+                            FontWeight="SemiBold"
+                            Text="Status" />
+                    </Grid>
+                </Border>
+
+                <ListBox
+                    Grid.Row="1"
+                    Margin="0,8,0,0"
+                    ItemsSource="{Binding Papers}"
+                    SelectedItem="{Binding SelectedPaper, Mode=TwoWay}">
+
+                    <ListBox.Styles>
+                        <Style Selector="ListBoxItem">
+                            <Setter
+                                Property="HorizontalContentAlignment"
+                                Value="Stretch" />
+                        </Style>
+                    </ListBox.Styles>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:PaperListItem">
+                            <Border
+                                Padding="12"
+                                BorderBrush="Gray"
+                                BorderThickness="0,0,0,1">
+
+                                <Grid ColumnDefinitions="2.5*,1.5*,90,1.5*,120">
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="0,0,12,0"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding Title}"
+                                        TextTrimming="CharacterEllipsis" />
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="0,0,12,0"
+                                        Text="{Binding AuthorsText}"
+                                        TextTrimming="CharacterEllipsis" />
+
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        Margin="0,0,12,0"
+                                        Text="{Binding PublicationYear}" />
+
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        Margin="0,0,12,0"
+                                        Text="{Binding JournalTitle}"
+                                        TextTrimming="CharacterEllipsis" />
+
+                                    <TextBlock
+                                        Grid.Column="4"
+                                        Text="{Binding ReadingStatus}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
