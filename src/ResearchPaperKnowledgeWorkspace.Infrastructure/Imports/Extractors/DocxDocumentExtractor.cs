@@ -33,9 +33,9 @@ public sealed class DocxDocumentExtractor
 
         var body =
             document.MainDocumentPart?
-                .Document
+                .Document?
                 .Body;
-
+                
         var paragraphs = body?
             .Descendants<Paragraph>()
             .Select(paragraph =>

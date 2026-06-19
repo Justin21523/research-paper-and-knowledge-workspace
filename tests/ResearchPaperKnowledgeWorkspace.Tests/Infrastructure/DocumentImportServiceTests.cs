@@ -185,7 +185,78 @@ public sealed class DocumentImportServiceTests
             1,
             await verificationContext.Attachments.CountAsync());
     }
+    [Fact]
+    public async Task AttachmentAndQueueOperations_ShouldReturnManagedFileAndClearHistory()
+    {
+        var markdownPath = Path.Combine(
+            _temporaryDirectory,
+            "managed-attachment.md");
 
+        await File.WriteAllTextAsync(
+            markdownPath,
+            "# Managed Attachment");
+
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        var options =
+            new DbContextOptionsBuilder<
+                    ResearchWorkspaceDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        var factory =
+            new TestDbContextFactory(options);
+
+        await using (var dbContext =
+                    factory.CreateDbContext())
+        {
+            await dbContext.Database
+                .EnsureCreatedAsync();
+        }
+
+        var paths = CreateWorkspacePaths();
+
+        var service = new DocumentImportService(
+            factory,
+            paths,
+            new IDocumentTextExtractor[]
+            {
+                new MarkdownDocumentExtractor()
+            });
+
+        var importResult =
+            await service.ImportAsync(
+                new[] { markdownPath });
+
+        var importedItem =
+            Assert.Single(importResult.Items);
+
+        Assert.NotNull(importedItem.PaperId);
+
+        var attachments =
+            await service.GetPaperAttachmentsAsync(
+                importedItem.PaperId!.Value);
+
+        var attachment =
+            Assert.Single(attachments);
+
+        Assert.True(attachment.IsFileAvailable);
+        Assert.True(
+            File.Exists(attachment.AbsoluteFilePath));
+
+        var removedCount =
+            await service.ClearCompletedJobsAsync();
+
+        Assert.Equal(1, removedCount);
+
+        var remainingJobs =
+            await service.GetRecentJobsAsync();
+
+        Assert.Empty(remainingJobs);
+    }
     private WorkspacePaths CreateWorkspacePaths()
     {
         var applicationDirectory =

@@ -1,0 +1,297 @@
+<UserControl
+    x:Class="ResearchPaperKnowledgeWorkspace.App.Views.Imports.ImportWorkspaceView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:ResearchPaperKnowledgeWorkspace.App.ViewModels.Imports"
+    xmlns:models="using:ResearchPaperKnowledgeWorkspace.Application.Imports.Models"
+    x:DataType="vm:ImportWorkspaceViewModel">
+
+    <Grid
+        Margin="20"
+        RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Header -->
+        <Grid
+            Grid.Row="0"
+            Margin="0,0,0,14"
+            ColumnDefinitions="*,Auto,Auto,Auto"
+            ColumnSpacing="8">
+
+            <StackPanel>
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    Text="Document Import" />
+
+                <TextBlock
+                    Margin="0,4,0,0"
+                    Opacity="0.7"
+                    Text="{Binding QueueSummaryText}" />
+            </StackPanel>
+
+            <Button
+                x:Name="OpenFilesButton"
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Click="OnOpenFilesClick"
+                Content="Open Files" />
+
+            <Button
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Command="{Binding RefreshQueueCommand}"
+                Content="Refresh Queue" />
+
+            <Button
+                Grid.Column="3"
+                VerticalAlignment="Center"
+                Command="{Binding ClearCompletedCommand}"
+                Content="Clear Completed" />
+        </Grid>
+
+        <!-- Drop zone -->
+        <Border
+            x:Name="DropZone"
+            Grid.Row="1"
+            MinHeight="110"
+            Margin="0,0,0,14"
+            Padding="20"
+            DragDrop.AllowDrop="True"
+            DragDrop.DragEnter="OnDragEnter"
+            DragDrop.DragLeave="OnDragLeave"
+            DragDrop.DragOver="OnDragOver"
+            DragDrop.Drop="OnDrop"
+            BorderBrush="Gray"
+            BorderThickness="2"
+            CornerRadius="10">
+
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="8">
+
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    FontSize="19"
+                    FontWeight="SemiBold"
+                    Text="{Binding DropZoneText}" />
+
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    Opacity="0.65"
+                    Text="Supported formats: PDF, DOCX, MD, MARKDOWN" />
+            </StackPanel>
+        </Border>
+
+        <!-- Messages -->
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,0,0,14"
+            Spacing="8">
+
+            <Border
+                IsVisible="{Binding HasError}"
+                Padding="10"
+                BorderBrush="#C84A4A"
+                BorderThickness="1"
+                CornerRadius="6">
+
+                <TextBlock
+                    Text="{Binding ErrorMessage}"
+                    TextWrapping="Wrap" />
+            </Border>
+
+            <Border
+                IsVisible="{Binding HasStatusMessage}"
+                Padding="10"
+                BorderBrush="#4B8A57"
+                BorderThickness="1"
+                CornerRadius="6">
+
+                <TextBlock
+                    Text="{Binding StatusMessage}"
+                    TextWrapping="Wrap" />
+            </Border>
+
+            <ProgressBar
+                IsVisible="{Binding IsBusy}"
+                IsIndeterminate="True" />
+        </StackPanel>
+
+        <!-- Queue and attachments -->
+        <Grid
+            Grid.Row="3"
+            MinHeight="0"
+            ColumnDefinitions="3*,2*"
+            ColumnSpacing="14">
+
+            <!-- Import queue -->
+            <Border
+                Grid.Column="0"
+                MinHeight="0"
+                Padding="12"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <Grid RowDefinitions="Auto,*">
+                    <Grid
+                        Grid.Row="0"
+                        Margin="0,0,0,10"
+                        ColumnDefinitions="*,Auto">
+
+                        <TextBlock
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Text="Import Queue" />
+
+                        <Button
+                            Grid.Column="1"
+                            Command="{Binding RetrySelectedCommand}"
+                            Content="Retry Selected" />
+                    </Grid>
+
+                    <ListBox
+                        Grid.Row="1"
+                        MinHeight="0"
+                        ItemsSource="{Binding Jobs}"
+                        SelectedItem="{Binding SelectedJob, Mode=TwoWay}"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter
+                                    Property="HorizontalContentAlignment"
+                                    Value="Stretch" />
+                            </Style>
+                        </ListBox.Styles>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate
+                                x:DataType="models:ImportQueueItem">
+
+                                <Border
+                                    Padding="10"
+                                    BorderBrush="Gray"
+                                    BorderThickness="0,0,0,1">
+
+                                    <Grid
+                                        ColumnDefinitions="2*,120,110,*"
+                                        ColumnSpacing="10">
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{Binding FileName}"
+                                                TextTrimming="CharacterEllipsis" />
+
+                                            <TextBlock
+                                                FontSize="11"
+                                                Opacity="0.65"
+                                                Text="{Binding DetectedTitle}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Text="{Binding AttachmentType}" />
+
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Text="{Binding Status}" />
+
+                                        <TextBlock
+                                            Grid.Column="3"
+                                            VerticalAlignment="Center"
+                                            Text="{Binding ErrorMessage}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Attachments -->
+            <Border
+                Grid.Column="1"
+                MinHeight="0"
+                Padding="12"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock
+                        Grid.Row="0"
+                        Margin="0,0,0,10"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Text="Managed Attachments" />
+
+                    <ListBox
+                        Grid.Row="1"
+                        MinHeight="0"
+                        ItemsSource="{Binding Attachments}"
+                        SelectedItem="{Binding SelectedAttachment, Mode=TwoWay}"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate
+                                x:DataType="models:AttachmentListItem">
+
+                                <Border
+                                    Padding="10"
+                                    BorderBrush="Gray"
+                                    BorderThickness="0,0,0,1">
+
+                                    <StackPanel Spacing="4">
+                                        <TextBlock
+                                            FontWeight="SemiBold"
+                                            Text="{Binding OriginalFileName}"
+                                            TextTrimming="CharacterEllipsis" />
+
+                                        <TextBlock
+                                            Opacity="0.7"
+                                            Text="{Binding AttachmentType}" />
+
+                                        <TextBlock
+                                            Opacity="0.7"
+                                            Text="{Binding FileSizeText}" />
+
+                                        <TextBlock
+                                            Opacity="0.7"
+                                            Text="{Binding PageCountText}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Grid
+                        Grid.Row="2"
+                        Margin="0,10,0,0"
+                        ColumnDefinitions="*,*"
+                        ColumnSpacing="8">
+
+                        <Button
+                            Grid.Column="0"
+                            IsEnabled="{Binding CanOpenSelectedAttachment}"
+                            Click="OnOpenAttachmentClick"
+                            Content="Open File" />
+
+                        <Button
+                            Grid.Column="1"
+                            IsEnabled="{Binding CanOpenSelectedAttachment}"
+                            Click="OnRevealAttachmentClick"
+                            Content="Reveal Folder" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

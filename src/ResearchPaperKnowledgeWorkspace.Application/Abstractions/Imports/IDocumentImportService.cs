@@ -11,4 +11,17 @@ public interface IDocumentImportService
     Task<IReadOnlyList<ImportQueueItem>> GetRecentJobsAsync(
         int limit = 100,
         CancellationToken cancellationToken = default);
+    Task<ImportFileResult> RetryAsync(
+        Guid importJobId,
+        CancellationToken cancellationToken = default);
+
+    Task<int> ClearCompletedJobsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AttachmentListItem>>
+        GetPaperAttachmentsAsync(
+            Guid paperId,
+            CancellationToken cancellationToken = default);
+
+
 }

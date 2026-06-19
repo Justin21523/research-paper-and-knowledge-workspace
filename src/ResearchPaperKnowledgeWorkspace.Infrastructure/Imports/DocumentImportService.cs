@@ -463,4 +463,115 @@ public sealed class DocumentImportService
             // Cleanup failures must not hide the import error.
         }
     }
+
+    public async Task<ImportFileResult> RetryAsync(
+        Guid importJobId,
+        CancellationToken cancellationToken = default)
+    {
+        if (importJobId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "A valid import job identifier is required.",
+                nameof(importJobId));
+        }
+
+        await using var dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        var originalFilePath =
+            await dbContext.ImportJobs
+                .AsNoTracking()
+                .Where(job => job.Id == importJobId)
+                .Select(job => job.OriginalFilePath)
+                .SingleOrDefaultAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(originalFilePath))
+        {
+            throw new InvalidOperationException(
+                "The selected import job could not be found.");
+        }
+
+        var batchResult = await ImportAsync(
+            new[] { originalFilePath },
+            cancellationToken);
+
+        return batchResult.Items.Single();
+    }
+
+    public async Task<int> ClearCompletedJobsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        var completedJobs =
+            await dbContext.ImportJobs
+                .Where(job =>
+                    job.Status != ImportJobStatus.Pending &&
+                    job.Status != ImportJobStatus.Processing)
+                .ToListAsync(cancellationToken);
+
+        if (completedJobs.Count == 0)
+        {
+            return 0;
+        }
+
+        dbContext.ImportJobs.RemoveRange(completedJobs);
+
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        return completedJobs.Count;
+    }
+    
+    public async Task<IReadOnlyList<AttachmentListItem>>
+        GetPaperAttachmentsAsync(
+            Guid paperId,
+            CancellationToken cancellationToken = default)
+    {
+        if (paperId == Guid.Empty)
+        {
+            return Array.Empty<AttachmentListItem>();
+        }
+
+        await using var dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        var attachments =
+            await dbContext.Attachments
+                .AsNoTracking()
+                .Where(attachment =>
+                    attachment.PaperId == paperId)
+                .OrderByDescending(attachment =>
+                    attachment.IsPrimary)
+                .ThenBy(attachment =>
+                    attachment.OriginalFileName)
+                .ToListAsync(cancellationToken);
+
+        return attachments
+            .Select(attachment =>
+            {
+                var absoluteFilePath = Path.GetFullPath(
+                    Path.Combine(
+                        _workspacePaths.ApplicationDirectory,
+                        attachment.FilePath));
+
+                return new AttachmentListItem(
+                    attachment.Id,
+                    attachment.PaperId,
+                    attachment.OriginalFileName,
+                    attachment.AttachmentType,
+                    attachment.FileSizeBytes,
+                    attachment.PageCount,
+                    absoluteFilePath,
+                    File.Exists(absoluteFilePath));
+            })
+            .ToList();
+    }
+
+
+
 }

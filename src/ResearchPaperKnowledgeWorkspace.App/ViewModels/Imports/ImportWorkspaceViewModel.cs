@@ -41,18 +41,25 @@ public sealed class ImportWorkspaceViewModel : ViewModelBase
     public ImportWorkspaceViewModel(
         IDocumentImportService documentImportService)
     {
-        _documentImportService = documentImportService;
+        _documentImportService =
+            documentImportService ??
+            throw new ArgumentNullException(
+                nameof(documentImportService));
 
         RefreshQueueCommand = new AsyncRelayCommand(
             () => RefreshQueueWithBusyStateAsync(
                 CancellationToken.None),
             CanRunCommand);
 
+        RetrySelectedCommand = new AsyncRelayCommand(
+            RetrySelectedAsync,
+            CanRetrySelected);
+
         ClearCompletedCommand = new AsyncRelayCommand(
             ClearCompletedAsync,
             CanRunCommand);
     }
-
+    
     public event EventHandler? ImportCompleted;
 
     public ObservableCollection<ImportQueueItem>
