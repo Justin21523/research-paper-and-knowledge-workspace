@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ResearchPaperKnowledgeWorkspace.Core\ResearchPaperKnowledgeWorkspace.Core.csproj" />
+    <ProjectReference Include="..\ResearchPaperKnowledgeWorkspace.Application\ResearchPaperKnowledgeWorkspace.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

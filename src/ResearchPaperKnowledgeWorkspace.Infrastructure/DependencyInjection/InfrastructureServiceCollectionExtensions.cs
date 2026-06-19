@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Data;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Data.Initialization;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Storage;
+using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Persistence;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.Repositories;
 
 namespace ResearchPaperKnowledgeWorkspace.Infrastructure.DependencyInjection;
 
@@ -29,7 +31,8 @@ public static class InfrastructureServiceCollectionExtensions
             {
                 options.UseSqlite(connectionString);
             });
-
+            
+        services.AddSingleton<IPaperRepository, EfPaperRepository>();
         services.AddSingleton<DatabaseInitializer>();
 
         return services;

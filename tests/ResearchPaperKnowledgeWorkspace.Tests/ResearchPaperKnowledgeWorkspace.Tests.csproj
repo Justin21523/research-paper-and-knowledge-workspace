@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ResearchPaperKnowledgeWorkspace.Core\ResearchPaperKnowledgeWorkspace.Core.csproj" />
     <ProjectReference Include="..\..\src\ResearchPaperKnowledgeWorkspace.Infrastructure\ResearchPaperKnowledgeWorkspace.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ResearchPaperKnowledgeWorkspace.Application\ResearchPaperKnowledgeWorkspace.Application.csproj" />
   </ItemGroup>
 
 </Project>

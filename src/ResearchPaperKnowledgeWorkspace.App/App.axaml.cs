@@ -11,10 +11,11 @@ using ResearchPaperKnowledgeWorkspace.App.Views;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Data.Initialization;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.DependencyInjection;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Storage;
+using ResearchPaperKnowledgeWorkspace.Application.DependencyInjection;
 
 namespace ResearchPaperKnowledgeWorkspace.App;
 
-public partial class App : Application
+public partial class App : Avalonia.Application
 {   
     private ServiceProvider? _serviceProvider;
 
@@ -33,6 +34,7 @@ public partial class App : Application
 
             var services = new ServiceCollection();
 
+            services.AddResearchWorkspaceApplication();
             services.AddResearchWorkspaceInfrastructure(
                 workspacePaths);
 
