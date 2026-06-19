@@ -4,13 +4,20 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
+
 using ResearchPaperKnowledgeWorkspace.App.ViewModels;
 using ResearchPaperKnowledgeWorkspace.App.Views;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.Data.Initialization;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.DependencyInjection;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.Storage;
 
 namespace ResearchPaperKnowledgeWorkspace.App;
 
 public partial class App : Application
-{
+{   
+    private ServiceProvider? _serviceProvider;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -18,11 +25,46 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        if (ApplicationLifetime is
+            IClassicDesktopStyleApplicationLifetime desktop)
         {
+            var workspacePaths =
+                WorkspacePathProvider.CreateDefault();
+
+            var services = new ServiceCollection();
+
+            services.AddResearchWorkspaceInfrastructure(
+                workspacePaths);
+
+            services.AddSingleton<MainWindowViewModel>();
+
+            _serviceProvider = services.BuildServiceProvider(
+                new ServiceProviderOptions
+                {
+                    ValidateOnBuild = true,
+                    ValidateScopes = true
+                });
+
+            var databaseInitializer = _serviceProvider
+                .GetRequiredService<DatabaseInitializer>();
+
+            databaseInitializer
+                .InitializeAsync()
+                .GetAwaiter()
+                .GetResult();
+
+            var mainWindowViewModel = _serviceProvider
+                .GetRequiredService<MainWindowViewModel>();
+
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(),
+                DataContext = mainWindowViewModel
+            };
+
+            desktop.Exit += (_, _) =>
+            {
+                _serviceProvider?.Dispose();
+                _serviceProvider = null;
             };
         }
 
