@@ -29,10 +29,23 @@ public static class WorkspacePathProvider
         var databasePath = Path.Combine(
             dataDirectory,
             "research-workspace.db");
+        
+        var filesDirectory = Path.Combine(
+            applicationDirectory,
+            "files");
+
+        var temporaryImportDirectory = Path.Combine(
+            applicationDirectory,
+            "imports");
+
+        Directory.CreateDirectory(filesDirectory);
+        Directory.CreateDirectory(temporaryImportDirectory);
 
         return new WorkspacePaths(
             applicationDirectory,
             dataDirectory,
-            databasePath);
+            databasePath,
+            filesDirectory,
+            temporaryImportDirectory);
     }
 }

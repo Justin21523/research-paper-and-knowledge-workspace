@@ -12,15 +12,6 @@ public sealed class AttachmentConfiguration
     {
         base.Configure(builder);
 
-        builder.ToTable(
-            "Attachments",
-            tableBuilder =>
-            {
-                tableBuilder.HasCheckConstraint(
-                    "CK_Attachments_FileSizeBytes",
-                    "\"FileSizeBytes\" >= 0");
-            });
-
         builder.Property(attachment => attachment.OriginalFileName)
             .IsRequired()
             .HasMaxLength(1000);
@@ -41,10 +32,27 @@ public sealed class AttachmentConfiguration
 
         builder.Property(attachment => attachment.Sha256Hash)
             .HasMaxLength(64);
+        
+        builder.Property(attachment => attachment.ExtractedText)
+            .HasColumnType("TEXT");
 
+        builder.ToTable(
+            "Attachments",
+            tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "CK_Attachments_FileSizeBytes",
+                    "\"FileSizeBytes\" >= 0");
+
+                tableBuilder.HasCheckConstraint(
+                    "CK_Attachments_PageCount",
+                    "\"PageCount\" IS NULL OR \"PageCount\" >= 0");
+            });
+        
         builder.HasIndex(attachment => attachment.PaperId);
 
-        builder.HasIndex(attachment => attachment.Sha256Hash);
+        builder.HasIndex(attachment => attachment.Sha256Hash)
+            .IsUnique();
 
         builder.HasIndex(attachment => attachment.AttachmentType);
 

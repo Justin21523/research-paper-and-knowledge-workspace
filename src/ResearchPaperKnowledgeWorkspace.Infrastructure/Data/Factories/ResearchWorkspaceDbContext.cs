@@ -33,7 +33,9 @@ public sealed class ResearchWorkspaceDbContext : DbContext
     public DbSet<Note> Notes => Set<Note>();
 
     public DbSet<Attachment> Attachments => Set<Attachment>();
-
+    public DbSet<ImportJob> ImportJobs =>
+        Set<ImportJob>();
+        
     public DbSet<PaperRelation> PaperRelations =>
         Set<PaperRelation>();
 

@@ -8,6 +8,9 @@ using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Persistence;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Repositories;
 using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Development;
 using ResearchPaperKnowledgeWorkspace.Infrastructure.Data.Seeding;
+using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Imports;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.Imports;
+using ResearchPaperKnowledgeWorkspace.Infrastructure.Imports.Extractors;
 
 namespace ResearchPaperKnowledgeWorkspace.Infrastructure.DependencyInjection;
 
@@ -42,6 +45,22 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<
             IResearchCatalogRepository,
             EfResearchCatalogRepository>();
+        services.AddSingleton<
+            IDocumentTextExtractor,
+            PdfDocumentExtractor>();
+
+        services.AddSingleton<
+            IDocumentTextExtractor,
+            DocxDocumentExtractor>();
+
+        services.AddSingleton<
+            IDocumentTextExtractor,
+            MarkdownDocumentExtractor>();
+
+        services.AddSingleton<
+            IDocumentImportService,
+            DocumentImportService>();
+
             
         return services;
     }

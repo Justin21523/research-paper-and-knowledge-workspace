@@ -22,7 +22,14 @@ public sealed class Attachment : EntityBase
     public long FileSizeBytes { get; set; }
 
     public string? Sha256Hash { get; set; }
+    /// <summary>
+    /// Plain text extracted from the imported document.
+    /// </summary>
+    public string? ExtractedText { get; set; }
 
+    public int? PageCount { get; set; }
+
+    public DateTimeOffset? SourceModifiedAtUtc { get; set; }
     public AttachmentType AttachmentType { get; set; } =
         AttachmentType.Unknown;
 
