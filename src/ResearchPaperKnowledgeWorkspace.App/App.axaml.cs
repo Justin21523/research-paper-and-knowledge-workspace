@@ -41,6 +41,7 @@ public partial class App : Avalonia.Application
 
             services.AddSingleton<PaperEditorViewModel>();
             services.AddSingleton<LibraryViewModel>();
+            services.AddSingleton<PaperOrganizationViewModel>();
             services.AddSingleton<MainWindowViewModel>();
             
             _serviceProvider = services.BuildServiceProvider(
