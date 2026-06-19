@@ -39,6 +39,7 @@ public partial class App : Avalonia.Application
             services.AddResearchWorkspaceInfrastructure(
                 workspacePaths);
 
+            services.AddSingleton<PaperEditorViewModel>();
             services.AddSingleton<LibraryViewModel>();
             services.AddSingleton<MainWindowViewModel>();
             

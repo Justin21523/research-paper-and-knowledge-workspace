@@ -7,8 +7,8 @@
     x:DataType="vm:LibraryViewModel">
 
     <Grid
-        Margin="24"
-        RowDefinitions="Auto,Auto,Auto,*">
+        Margin="20"
+        RowDefinitions="Auto,Auto,Auto,Auto,*">
 
         <!-- Header -->
         <Grid
@@ -39,56 +39,481 @@
 
         <!-- Quick add form -->
         <Border
-            Grid.Row="1"
-            Margin="0,0,0,14"
-            Padding="16"
+            Grid.Column="1"
+            Padding="18"
             BorderBrush="Gray"
             BorderThickness="1"
             CornerRadius="8">
 
-            <StackPanel Spacing="12">
-                <TextBlock
-                    FontSize="17"
-                    FontWeight="SemiBold"
-                    Text="Quick Add Paper" />
+            <Grid>
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding HasNoSelectedPaper}"
+                    Spacing="8">
 
-                <Grid ColumnDefinitions="2*,110,1.4*,1.4*,Auto">
-                    <TextBox
-                        Grid.Column="0"
-                        Margin="0,0,8,0"
-                        Text="{Binding TitleInput}"
-                        PlaceholderText="Paper title" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Text="No paper selected" />
 
-                    <TextBox
-                        Grid.Column="1"
-                        Margin="0,0,8,0"
-                        Text="{Binding PublicationYearInput}"
-                        PlaceholderText="Year" />
+                    <TextBlock
+                        MaxWidth="300"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Opacity="0.7"
+                        Text="Select a paper to inspect and edit its metadata." />
+                </StackPanel>
 
-                    <TextBox
-                        Grid.Column="2"
-                        Margin="0,0,8,0"
-                        Text="{Binding JournalTitleInput}"
-                        PlaceholderText="Journal or conference" />
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsVisible="{Binding IsLoadingDetails}"
+                    Spacing="12">
 
-                    <TextBox
-                        Grid.Column="3"
-                        Margin="0,0,8,0"
-                        Text="{Binding DoiInput}"
-                        PlaceholderText="DOI" />
+                    <ProgressBar
+                        Width="220"
+                        IsIndeterminate="True" />
 
-                    <Button
-                        Grid.Column="4"
-                        MinWidth="110"
-                        Command="{Binding CreatePaperCommand}"
-                        Content="Add Paper" />
+                    <TextBlock
+                        Text="Loading paper metadata..." />
+                </StackPanel>
+
+                <Grid
+                    IsVisible="{Binding HasSelectedPaperDetails}"
+                    RowDefinitions="Auto,Auto,*">
+
+                    <Grid
+                        Grid.Row="0"
+                        Margin="0,0,0,14"
+                        ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
+
+                        <StackPanel>
+                            <TextBlock
+                                FontSize="21"
+                                FontWeight="SemiBold"
+                                Text="Paper Metadata" />
+
+                            <TextBlock
+                                Margin="0,3,0,0"
+                                Opacity="0.7"
+                                Text="{Binding Editor.DirtyStateText}" />
+                        </StackPanel>
+                        
+                        <Button
+                            Grid.Column="1"
+                            Margin="0,0,8,0"
+                            Command="{Binding ToggleFavoriteCommand}"
+                            Content="{Binding FavoriteActionText}" />
+
+                        <Button
+                            Grid.Column="2"
+                            Margin="0,0,8,0"
+                            Command="{Binding ToggleArchiveCommand}"
+                            Content="{Binding ArchiveActionText}" />
+
+                        <Button
+                            Grid.Column="3"
+                            Margin="0,0,8,0"
+                            Command="{Binding RequestDeleteCommand}"
+                            Content="Delete" />
+                        <Button
+                            Grid.Column="4"
+                            Margin="0,0,8,0"
+                            Command="{Binding Editor.RevertCommand}"
+                            Content="Revert" />
+                        <Button
+                            Grid.Column="5"
+                            MinWidth="110"
+                            Command="{Binding Editor.SaveCommand}"
+                            Content="Save Changes" />
+                    </Grid>
+                    <Border
+                        Grid.Row="1"
+                        Margin="0,0,0,12"
+                        Padding="12"
+                        IsVisible="{Binding IsDeleteConfirmationVisible}"
+                        BorderBrush="#C84A4A"
+                        BorderThickness="1"
+                        CornerRadius="6">
+
+                        <Grid
+                            ColumnDefinitions="*,Auto,Auto"
+                            ColumnSpacing="8">
+
+                            <TextBlock
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Text="{Binding DeleteConfirmationText}"
+                                TextWrapping="Wrap" />
+
+                            <Button
+                                Grid.Column="1"
+                                Command="{Binding CancelDeleteCommand}"
+                                Content="Cancel" />
+
+                            <Button
+                                Grid.Column="2"
+                                Command="{Binding ConfirmDeleteCommand}"
+                                Content="Delete Permanently" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="2">
+                        <StackPanel
+                            IsEnabled="{Binding Editor.CanEdit}"
+                            Spacing="14">
+
+                            <Border
+                                IsVisible="{Binding Editor.HasError}"
+                                Padding="10"
+                                BorderBrush="#C84A4A"
+                                BorderThickness="1"
+                                CornerRadius="6">
+
+                                <TextBlock
+                                    Text="{Binding Editor.ErrorMessage}"
+                                    TextWrapping="Wrap" />
+                            </Border>
+
+                            <Border
+                                IsVisible="{Binding Editor.HasStatusMessage}"
+                                Padding="10"
+                                BorderBrush="#4B8A57"
+                                BorderThickness="1"
+                                CornerRadius="6">
+
+                                <TextBlock
+                                    Text="{Binding Editor.StatusMessage}"
+                                    TextWrapping="Wrap" />
+                            </Border>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="Title" />
+
+                                <TextBox
+                                    Text="{Binding Editor.Title, Mode=TwoWay}"
+                                    PlaceholderText="Paper title" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="Subtitle" />
+
+                                <TextBox
+                                    Text="{Binding Editor.Subtitle, Mode=TwoWay}"
+                                    PlaceholderText="Optional subtitle" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="Authors" />
+
+                                <TextBox
+                                    IsReadOnly="True"
+                                    Text="{Binding Editor.AuthorsText}"
+                                    PlaceholderText="Author management will be added later" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Publication year" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.PublicationYearInput, Mode=TwoWay}"
+                                        PlaceholderText="2026" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Reading status" />
+
+                                    <ComboBox
+                                        ItemsSource="{Binding Editor.ReadingStatusOptions}"
+                                        SelectedItem="{Binding Editor.ReadingStatus, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Journal" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.JournalTitle, Mode=TwoWay}"
+                                        PlaceholderText="Journal title" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Conference" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.ConferenceName, Mode=TwoWay}"
+                                        PlaceholderText="Conference name" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="Publisher" />
+
+                                <TextBox
+                                    Text="{Binding Editor.Publisher, Mode=TwoWay}"
+                                    PlaceholderText="Publisher or institution" />
+                            </StackPanel>
+
+                            <Grid
+                                ColumnDefinitions="*,*,*"
+                                ColumnSpacing="10">
+
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Volume" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.Volume, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Issue" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.Issue, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="2"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Pages" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.PageRange, Mode=TwoWay}"
+                                        PlaceholderText="1-25" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="DOI" />
+
+                                <TextBox
+                                    Text="{Binding Editor.Doi, Mode=TwoWay}"
+                                    PlaceholderText="10.xxxx/xxxxx" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="ISBN" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.Isbn, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="ISSN" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.Issn, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="URL" />
+
+                                <TextBox
+                                    Text="{Binding Editor.Url, Mode=TwoWay}"
+                                    PlaceholderText="https://..." />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Language code" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.LanguageCode, Mode=TwoWay}"
+                                        PlaceholderText="en, zh-TW, ja" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Citation key" />
+
+                                    <TextBox
+                                        Text="{Binding Editor.CitationKey, Mode=TwoWay}"
+                                        PlaceholderText="smith2026knowledge" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid
+                                ColumnDefinitions="*,*,*"
+                                ColumnSpacing="10">
+
+                                <StackPanel
+                                    Grid.Column="0"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Rating" />
+
+                                    <ComboBox
+                                        ItemsSource="{Binding Editor.RatingOptions}"
+                                        SelectedItem="{Binding Editor.Rating, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="6">
+
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="Priority" />
+
+                                    <ComboBox
+                                        ItemsSource="{Binding Editor.PriorityOptions}"
+                                        SelectedItem="{Binding Editor.Priority, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <CheckBox
+                                    Grid.Column="2"
+                                    VerticalAlignment="Bottom"
+                                    IsChecked="{Binding Editor.IsFavorite, Mode=TwoWay}"
+                                    Content="Favorite" />
+                            </Grid>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    FontWeight="SemiBold"
+                                    Text="Abstract" />
+
+                                <TextBox
+                                    MinHeight="160"
+                                    AcceptsReturn="True"
+                                    TextWrapping="Wrap"
+                                    VerticalContentAlignment="Top"
+                                    Text="{Binding Editor.AbstractText, Mode=TwoWay}"
+                                    PlaceholderText="Research abstract or personal summary..." />
+                            </StackPanel>
+
+                            <TextBlock
+                                Margin="0,8,0,0"
+                                Opacity="0.6"
+                                Text="{Binding Editor.UpdatedAtText, StringFormat='Last updated: {0}'}" />
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
-            </StackPanel>
+            </Grid>
         </Border>
+        <Border
+            Grid.Row="2"
+            Margin="0,0,0,12"
+            Padding="12"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            CornerRadius="8">
 
+            <Grid
+                ColumnDefinitions="2*,Auto,Auto,190,Auto,Auto,Auto"
+                ColumnSpacing="8">
+
+                <TextBox
+                    Grid.Column="0"
+                    Text="{Binding SearchText, Mode=TwoWay}"
+                    PlaceholderText="Search title, author, abstract, journal, or DOI" />
+
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding SearchCommand}"
+                    Content="Search" />
+
+                <Button
+                    Grid.Column="2"
+                    Command="{Binding ClearSearchCommand}"
+                    Content="Clear" />
+
+                <ComboBox
+                    Grid.Column="3"
+                    ItemsSource="{Binding SortOptions}"
+                    SelectedItem="{Binding SelectedSortOption, Mode=TwoWay}" />
+
+                <CheckBox
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding FavoritesOnly, Mode=TwoWay}"
+                    Content="Favorites" />
+
+                <CheckBox
+                    Grid.Column="5"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding IncludeArchived, Mode=TwoWay}"
+                    Content="Archived" />
+
+                <Button
+                    Grid.Column="6"
+                    Command="{Binding SeedDemoDataCommand}"
+                    Content="Seed 150 Demo Papers" />
+            </Grid>
+        </Border> 
         <!-- Feedback messages -->
         <StackPanel
-            Grid.Row="2"
+            Grid.Row="3"
             Margin="0,0,0,14"
             Spacing="8">
 
@@ -118,7 +543,10 @@
         </StackPanel>
 
         <!-- Library content -->
-        <Grid Grid.Row="3">
+        <Grid
+            Grid.Row="4"
+            ColumnDefinitions="3*,2*"
+            ColumnSpacing="14">
 
             <!-- Loading state -->
             <StackPanel
@@ -169,8 +597,7 @@
             <!-- Paper list -->
             <Grid
                 IsVisible="{Binding HasPapers}"
-                RowDefinitions="Auto,*">
-
+                RowDefinitions="Auto,*, Auto">
                 <Border
                     Grid.Row="0"
                     Padding="12,10"
@@ -260,6 +687,38 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <Grid
+                    Grid.Row="2"
+                    Margin="0,12,0,0"
+                    ColumnDefinitions="Auto,*,Auto,Auto,Auto"
+                    ColumnSpacing="8">
+
+                    <ComboBox
+                        Grid.Column="0"
+                        Width="90"
+                        ItemsSource="{Binding PageSizeOptions}"
+                        SelectedItem="{Binding PageSize, Mode=TwoWay}" />
+
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Text="{Binding PageStatusText}" />
+
+                    <Button
+                        Grid.Column="2"
+                        Command="{Binding PreviousPageCommand}"
+                        Content="Previous" />
+
+                    <Button
+                        Grid.Column="3"
+                        Command="{Binding NextPageCommand}"
+                        Content="Next" />
+
+                    <Button
+                        Grid.Column="4"
+                        Command="{Binding SearchCommand}"
+                        Content="Apply Page Size" />
+                </Grid>            
             </Grid>
         </Grid>
     </Grid>
