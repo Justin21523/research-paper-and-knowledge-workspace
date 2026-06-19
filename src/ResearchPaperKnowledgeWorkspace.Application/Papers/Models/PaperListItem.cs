@@ -10,4 +10,5 @@ public sealed record PaperListItem(
     string? JournalTitle,
     ReadingStatus ReadingStatus,
     bool IsFavorite,
+    bool IsArchived,
     DateTimeOffset UpdatedAtUtc);

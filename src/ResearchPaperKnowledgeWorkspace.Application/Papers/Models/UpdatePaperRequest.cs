@@ -1,13 +1,11 @@
-using System;
 using ResearchPaperKnowledgeWorkspace.Core.Enums;
 
 namespace ResearchPaperKnowledgeWorkspace.Application.Papers.Models;
 
-public sealed record PaperDetails(
+public sealed record UpdatePaperRequest(
     Guid Id,
     string Title,
     string? Subtitle,
-    string AuthorsText,
     string? AbstractText,
     int? PublicationYear,
     string? JournalTitle,
@@ -25,6 +23,4 @@ public sealed record PaperDetails(
     ReadingStatus ReadingStatus,
     int Rating,
     int Priority,
-    bool IsFavorite,
-    bool IsArchived,
-    DateTimeOffset UpdatedAtUtc);
+    bool IsFavorite);

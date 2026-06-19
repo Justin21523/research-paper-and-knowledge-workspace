@@ -6,6 +6,7 @@ using ResearchPaperKnowledgeWorkspace.Application.Abstractions.Persistence;
 using ResearchPaperKnowledgeWorkspace.Application.Common.Exceptions;
 using ResearchPaperKnowledgeWorkspace.Application.Papers.Models;
 using ResearchPaperKnowledgeWorkspace.Core.Entities;
+using ResearchPaperKnowledgeWorkspace.Application.Common.Models;
 
 namespace ResearchPaperKnowledgeWorkspace.Application.Papers.Services;
 
@@ -18,23 +19,15 @@ public sealed class PaperLibraryService
         _paperRepository = paperRepository;
     }
 
-    public async Task<IReadOnlyList<PaperListItem>> GetPaperListAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PaperListItem>>
+        GetPaperListAsync(
+            CancellationToken cancellationToken = default)
     {
         var papers = await _paperRepository.ListAsync(
             cancellationToken);
 
         return papers
-            .Select(
-                paper => new PaperListItem(
-                    paper.Id,
-                    paper.Title,
-                    BuildAuthorsText(paper),
-                    paper.PublicationYear,
-                    paper.JournalTitle,
-                    paper.ReadingStatus,
-                    paper.IsFavorite,
-                    paper.UpdatedAtUtc))
+            .Select(MapListItem)
             .ToList();
     }
 
@@ -161,6 +154,210 @@ public sealed class PaperLibraryService
             paper.Rating,
             paper.Priority,
             paper.IsFavorite,
+            paper.IsArchived,
+            paper.UpdatedAtUtc);
+    }
+    public async Task<PaperDetails> UpdatePaperAsync(
+        UpdatePaperRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.Id == Guid.Empty)
+        {
+            throw new RequestValidationException(
+                "A valid paper identifier is required.");
+        }
+
+        ValidatePublicationYear(
+            request.PublicationYear);
+
+        ValidateZeroToFive(
+            request.Rating,
+            "Rating");
+
+        ValidateZeroToFive(
+            request.Priority,
+            "Priority");
+
+        var paper = await _paperRepository.GetByIdAsync(
+            request.Id,
+            cancellationToken);
+
+        if (paper is null)
+        {
+            throw new EntityNotFoundException(
+                "The selected paper could not be found.");
+        }
+
+        paper.Title = NormalizeRequiredText(
+            request.Title,
+            "Paper title is required.");
+
+        paper.Subtitle =
+            NormalizeOptionalText(request.Subtitle);
+
+        paper.AbstractText =
+            NormalizeOptionalText(request.AbstractText);
+
+        paper.PublicationYear =
+            request.PublicationYear;
+
+        paper.JournalTitle =
+            NormalizeOptionalText(request.JournalTitle);
+
+        paper.ConferenceName =
+            NormalizeOptionalText(request.ConferenceName);
+
+        paper.Publisher =
+            NormalizeOptionalText(request.Publisher);
+
+        paper.Volume =
+            NormalizeOptionalText(request.Volume);
+
+        paper.Issue =
+            NormalizeOptionalText(request.Issue);
+
+        paper.PageRange =
+            NormalizeOptionalText(request.PageRange);
+
+        paper.Doi =
+            NormalizeOptionalText(request.Doi);
+
+        paper.Isbn =
+            NormalizeOptionalText(request.Isbn);
+
+        paper.Issn =
+            NormalizeOptionalText(request.Issn);
+
+        paper.Url =
+            NormalizeOptionalText(request.Url);
+
+        paper.LanguageCode =
+            NormalizeOptionalText(request.LanguageCode);
+
+        paper.CitationKey =
+            NormalizeOptionalText(request.CitationKey);
+
+        paper.ReadingStatus =
+            request.ReadingStatus;
+
+        paper.Rating =
+            request.Rating;
+
+        paper.Priority =
+            request.Priority;
+
+        paper.IsFavorite =
+            request.IsFavorite;
+
+        await _paperRepository.UpdateAsync(
+            paper,
+            cancellationToken);
+
+        return await GetPaperDetailsAsync(
+            paper.Id,
+            cancellationToken);
+    }
+    private static void ValidateZeroToFive(
+        int value,
+        string fieldName)
+    {
+        if (value < 0 || value > 5)
+        {
+            throw new RequestValidationException(
+                $"{fieldName} must be between 0 and 5.");
+        }
+    }    
+
+    public async Task<PagedResult<PaperListItem>>
+        SearchPapersAsync(
+            PaperQueryRequest request,
+            CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.PageNumber < 1)
+        {
+            throw new RequestValidationException(
+                "Page number must be at least 1.");
+        }
+
+        if (request.PageSize is < 1 or > 100)
+        {
+            throw new RequestValidationException(
+                "Page size must be between 1 and 100.");
+        }
+
+        var result = await _paperRepository.QueryAsync(
+            request,
+            cancellationToken);
+
+        var items = result.Items
+            .Select(MapListItem)
+            .ToList();
+
+        return new PagedResult<PaperListItem>(
+            items,
+            result.TotalCount,
+            result.PageNumber,
+            result.PageSize);
+    }
+
+    public async Task SetFavoriteAsync(
+        Guid paperId,
+        bool isFavorite,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _paperRepository.SetFavoriteAsync(
+                paperId,
+                isFavorite,
+                cancellationToken))
+        {
+            throw new EntityNotFoundException(
+                "The selected paper could not be found.");
+        }
+    }
+
+    public async Task SetArchivedAsync(
+        Guid paperId,
+        bool isArchived,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _paperRepository.SetArchivedAsync(
+                paperId,
+                isArchived,
+                cancellationToken))
+        {
+            throw new EntityNotFoundException(
+                "The selected paper could not be found.");
+        }
+    }
+
+    public async Task DeletePaperAsync(
+        Guid paperId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _paperRepository.DeleteAsync(
+                paperId,
+                cancellationToken))
+        {
+            throw new EntityNotFoundException(
+                "The selected paper could not be found.");
+        }
+    }
+    private static PaperListItem MapListItem(
+        Paper paper)
+    {
+        return new PaperListItem(
+            paper.Id,
+            paper.Title,
+            BuildAuthorsText(paper),
+            paper.PublicationYear,
+            paper.JournalTitle,
+            paper.ReadingStatus,
+            paper.IsFavorite,
+            paper.IsArchived,
             paper.UpdatedAtUtc);
     }
 
