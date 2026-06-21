@@ -1,8 +1,8 @@
 # Research Paper & Knowledge Workspace 📚🌐
 
-**Clean Architecture Desktop workstation for Academic Literature Management & Knowledge Graphs**
+**Clean Architecture Desktop Workstation for Academic Literature Management & Knowledge Organization**
 
-A professional academic assistant application designed to import, organize, annotate, and link research papers in a unified database workspace. Built using C# .NET 9.0, Avalonia UI, and Entity Framework Core with SQLite, it empowers researchers to structure their literature reviews, capture annotations using markdown, and map complex citation/relationship graphs.
+Research Paper & Knowledge Workspace is a learning-focused desktop application for practicing literature management, bibliographic metadata, research notes, import workflows, and personal knowledge organization. It is built with C#/.NET, Avalonia UI, Entity Framework Core, and SQLite, and is currently used as a portfolio project for connecting library and information science concepts with desktop application development.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
@@ -10,11 +10,13 @@ A professional academic assistant application designed to import, organize, anno
 
 ## 🖼️ System Showcase
 
-![Research Paper & Knowledge Workspace Interface](data/Screenshot.png)
+![Research Paper & Knowledge Workspace Overview](data/screenshot.png)
+
+The current screenshot shows the redesigned overview workspace with paper counts, library status, import activity, and recent research records. This view is intended to summarize the library at a glance before moving into detailed paper management, import review, and organization workflows.
 
 ## 🏆 Portfolio Significance & Outcomes
 
-This project demonstrates clean coding practices and professional software design patterns:
+This project is presented as an in-progress learning project. It focuses on clean desktop application structure and practical information organization patterns:
 - **Clean Architecture Implementation**: Strict division of concerns between Core (Entities, Enums, Value Objects, interfaces), Application (use cases, services, DTOs), Infrastructure (EF Core repositories, local storage, DB initialization), and App (Avalonia UI Views, ViewModels, assets).
 - **Entity Framework Core with SQLite**: Implements repository pattern (`EfPaperRepository`, `EfResearchCatalogRepository`) mapped via Entity Framework Core to manage complex relational structures such as self-referencing paper relations, tag lists, authors, and notes.
 - **Modern Desktop UI Layout**: Utilizes Avalonia UI 11 to deliver a modern, performant, and cross-platform XAML experience with split panes, responsive layouts, data binding, and asynchronous loading.
@@ -57,7 +59,7 @@ research-paper-and-knowledge-workspace/
 ├── ResearchPaperKnowledgeWorkspace.sln  # .NET solution file
 ├── README.md                            # Project documentation
 ├── data/
-│   └── Screenshot.png                   # Embedded system screenshot
+│   └── screenshot.png                   # Embedded system screenshot
 ├── src/
 │   ├── ResearchPaperKnowledgeWorkspace.Core/           # Domain Layer (Core Entities & Interfaces)
 │   │   ├── Common/                                     # Base Entity definitions
